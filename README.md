@@ -48,4 +48,4 @@ python main.py --dataset xxx
 
 ## Data
 
-Part of the dataset used for SASRec backbone and Bert4Rec backbone is uploaded in the repository, and ml-20m can download from this [link](https://grouplens.org/datasets/movielens/). For STOSA backbone, you can download the 5-score dataset from [Amazon Dataset](https://jmcauley.ucsd.edu/data/amazon/) or go to the [original repository](https://github.com/zfan20/STOSA) for the details.
+Part of the datasets used for SASRec backbone and Bert4Rec backbone are uploaded in the repository, and ml-20m can download from this [link](https://grouplens.org/datasets/movielens/). For STOSA backbone, you can download the 5-core dataset from [Amazon Dataset](https://jmcauley.ucsd.edu/data/amazon/) or go to the [original repository](https://github.com/zfan20/STOSA) for the details.
