@@ -1,0 +1,16 @@
+{
+  "batch_size": 128,
+  "eval_batch_size": 256,
+  "lr": 0.001,
+  "maxlen": 50,
+  "mask_prob": 0.6,
+  "hidden_units": 64,
+  "inner_units": 1024,
+  "num_epochs": 20,
+  "num_layers": 2,
+  "num_heads": 2,
+  "dropout": 0.5,
+  "attention_dropout": 0.2,
+  "weight_decay": 0.0001,
+  "dupe_factor": 10
+}
