@@ -30,6 +30,7 @@ class SASRecADT(torch.nn.Module):
         self.args = args
 
     def log2feats(self, log_seqs):
+        # encode process
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
         seqs *= self.item_emb.embedding_dim ** 0.5
         positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])

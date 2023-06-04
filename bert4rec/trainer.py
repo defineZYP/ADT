@@ -16,11 +16,11 @@ from datasets.dataset import data_partition, BertTrainDataset, BertEvalDataset
 from datasets.negative_sampler import PopularSampler, RandomSampler
 
 class BertTrainer:
-    def __init__(self, args, pl=False, local_rank=None):
-        # 获得数据集并定义数据集
+    def __init__(self, args):
+        # get dataset
         self.usernum, self.itemnum, self.train_loader, self.val_loader, self.test_loader = \
             self._get_datainfo_loader(args)
-        # 定义模型
+        # get model
         self.model = BertModel(
             usernum=self.usernum,
             itemnum=self.itemnum,
@@ -37,7 +37,7 @@ class BertTrainer:
                 module.bias.data.zero_()
         self.model.to(args.device)
         
-        # 定义optimizer和lr_scheduler，但是现在不需要lr_scheduler
+        # get optimizer
         self.optimizer = Adam(self.model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.weight_decay)
         self.num_epochs = args.num_epochs
         self.eval_interval = args.eval_interval
@@ -46,10 +46,10 @@ class BertTrainer:
         self.clip = args.clip
         self.args = args
 
-        self.pl = pl # 代表是不是多卡跑
-        self.local_rank = local_rank
-
     def evaluate(self, mode='val'):
+        '''
+        evaluate model on validation set or test set
+        '''
         NDCG = {k: 0.0 for k in self.metric_ks}
         HT = {k: 0.0 for k in self.metric_ks}
         valid_user = 0.0
@@ -85,6 +85,9 @@ class BertTrainer:
         return (NDCG, HT), AUC
 
     def train(self, lambda1, lambda2):
+        '''
+        train model with lambdas
+        '''
         T = 0.0
         t0 = time.time()
 
@@ -110,14 +113,12 @@ class BertTrainer:
                     logits = logits.view(-1, logits.size(-1))
                     labels = labels.view(-1).to(logits.device)
                     loss = self.ce(logits, labels)
-                    # print("GO")
-                    # print(loss.item())
-                    # TODO reconstruction and independence contraints
+                    # reconstruction contraints
                     if len(encoder_layer_input) != 0 and len(encoder_layer_input) == len(decoder_layer_output):
                         for i in range(len(encoder_layer_input)):
                             if lambda1[i] != 0:
                                 loss += lambda1[i] * F.mse_loss(encoder_layer_input[i], decoder_layer_output[i])
-                    # print(loss.item())
+                    # independence contraints
                     if self.args.num_heads > 1 and len(rec_layer_hsic) != 0:
                         batch_size = rec_layer_hsic[0].shape[0]
                         label = torch.arange(self.args.num_heads)
@@ -125,12 +126,12 @@ class BertTrainer:
                         for l in range(len(rec_layer_hsic)):
                             if lambda2[l] != 0:
                                 loss += lambda2[l] * F.nll_loss(rec_layer_hsic[l].view(batch_size * self.args.maxlen, self.args.num_heads, self.args.num_heads), label)
-                    # print(loss.item())
+                    # backward
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
                     self.optimizer.step()
-                    # self.lr_scheduler.step()
                     t.set_postfix(loss=loss.item())
+                # evaluate model
                 if ((epoch+1) % self.eval_interval == 0 or epoch + 1 == self.num_epochs):
                     self.model.eval()
                     t_test, test_AUC = self.evaluate(mode='test')
@@ -140,8 +141,6 @@ class BertTrainer:
                     print('Evaluating', end='')
                     for k in self.metric_ks:
                         print(f"epoch: {epoch + 1}, time: {T}, valid (NDCG@{k}: {t_valid[0][k]:.4f}, HR@{k}: {t_valid[1][k]:.4f}, AUC: {valid_AUC}), test (NDCG@{k}: {t_test[0][k]:.4f}, HR@{k}: {t_test[1][k]:.4f}, AUC: {test_AUC})")
-                        # print('epoch:%d, time: %f(s), valid (NDCG@%d: %.4f, HR@10: %.4f), test (NDCG@10: %.4f, HR@10: %.4f)'
-                        #         % (epoch, T, k, t_valid[0], t_valid[1], t_test[0], t_test[1]))
                     valid_score = valid_AUC
                     if valid_score >= best_valid_score:
                         best_valid_score = valid_score
@@ -162,13 +161,11 @@ class BertTrainer:
         dataset = data_partition(args.dataset)
         [user_train, user_valid, user_test, usernum, itemnum] = dataset
         generate = True
-        # fake generate dataset
+        # generate dataset from https://github.com/FeiSun/BERT4Rec/blob/master/gen_data.py
         for u in user_train:
             if u in user_valid:
                 user_train[u].extend(user_valid[u])
-        # prefix = f'./data/{args.dataset}_mask_prob_{args.mask_prob}_maxlen_{args.maxlen}'
-        # if os.path.exists(prefix + '_datas.npy') and os.path.exists(prefix + '_labels.npy'):
-        #     generate = False
+        # train dataset
         train_dataset = BertTrainDataset(
             user_train=user_train,
             user_val=user_valid,
@@ -189,10 +186,6 @@ class BertTrainer:
             generate=generate,
             dupe_factor=args.dupe_factor
         )
-        # if not generate:
-        #     train_dataset.load_dataset(prefix)
-        # else:
-        #     train_dataset.save_dataset(prefix)
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=4, shuffle=True)
         popular_sampler = PopularSampler(
             user_train,
@@ -202,6 +195,7 @@ class BertTrainer:
             itemnum,
             args.eval_negative_sample_size
         )
+        # validation dataset
         val_dataset = BertEvalDataset(
             user_train=user_train,
             user_val=user_valid,
@@ -213,6 +207,7 @@ class BertTrainer:
             mode='val',
         )
         val_loader = DataLoader(val_dataset, batch_size=args.eval_batch_size, num_workers=4, shuffle=False)
+        # test dataset
         test_dataset = BertEvalDataset(
             user_train=user_train,
             user_val=user_valid,

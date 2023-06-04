@@ -46,16 +46,16 @@ def parse_args():
     parser.add_argument('--eval_batch_size', default=512, type=int)
     parser.add_argument('--eval_set', default=-1, type=int) # number of the test set, negative value means all. It is ok to set it small to accelerate when searching
 
-    parser.add_argument('--warmup_epochs', default=200, type=int)
-    parser.add_argument('--search_epochs', default=500, type=int)
-    parser.add_argument('--population_num', type=int, default=100)
-    parser.add_argument('--select_num', type=int, default=50)
-    parser.add_argument('--m_prob', type=float, default=0.1)
-    parser.add_argument('--crossover_num', type=int, default=25)
-    parser.add_argument('--mutation_num', type=int, default=25)
-    parser.add_argument('--seed', type=int, default=2022)
-    parser.add_argument('--scale_factor', type=float, default=0.5)
-    parser.add_argument('--scale_decay_rate', type=float, default=0.5)
+    parser.add_argument('--warmup_epochs', help='number of epochs when warmup training', default=200, type=int)
+    parser.add_argument('--search_epochs', help='number of epochs when searching best lambdas', default=500, type=int)
+    parser.add_argument('--population_num', help='population number', type=int, default=100)
+    parser.add_argument('--select_num', help='select topk candidates', type=int, default=50)
+    parser.add_argument('--m_prob', help='probability of crossover and mutation during evolution process', type=float, default=0.1)
+    parser.add_argument('--crossover_num', help='crossover number', type=int, default=25)
+    parser.add_argument('--mutation_num', help='mutation number', type=int, default=25)
+    parser.add_argument('--seed', help='random seed during evolution', type=int, default=2022)
+    parser.add_argument('--scale_factor', help='scale factor', type=float, default=0.5)
+    parser.add_argument('--scale_decay_rate', help='scale decay rate', type=float, default=0.5)
 
     args = parser.parse_args()
 

@@ -162,7 +162,7 @@ class DistMeanSAModel(DistSAModel):
         self.item_encoder = DistMeanSAEncoder(args)
 
 
-# 魔改
+# reimplementation from original model
 class DisenDistSAModel(nn.Module):
     def __init__(self, args):
         super(DisenDistSAModel, self).__init__()

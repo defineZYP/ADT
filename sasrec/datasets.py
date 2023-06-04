@@ -217,16 +217,6 @@ class DisenDataset(Dataset):
         items = self.user_seq[index]
 
         assert self.data_type in {"train", "valid", "test"}
-
-        # [0, 1, 2, 3, 4, 5, 6]
-        # train [0, 1, 2, 3]
-        # target [1, 2, 3, 4]
-
-        # valid [0, 1, 2, 3, 4]
-        # answer [5]
-
-        # test [0, 1, 2, 3, 4, 5]
-        # answer [6]
         if self.data_type == "train":
             input_ids = items[:-3]
             target_pos = items[1:-2]

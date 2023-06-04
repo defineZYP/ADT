@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--ckp', default=10, type=int, help="pretrain epochs 10, 20, 30...")
 
     # model args
+    parser.add_argument("--model_name", type=str, default='adt')
     parser.add_argument("--hidden_units", type=int, default=64, help="hidden size of transformer model")
     parser.add_argument("--num_layers", type=int, default=2, help="number of layers")
     parser.add_argument('--num_heads', default=2, type=int)
@@ -116,10 +117,7 @@ def main():
         scores, result_info, _ = trainer.test(0, full_sort=True)
 
     else:
-        if args.model_name == 'DistSAModel':
-            early_stopping = EarlyStopping(args.checkpoint_path, patience=100, verbose=True)
-        else:
-            early_stopping = EarlyStopping(args.checkpoint_path, patience=50, verbose=True)
+        early_stopping = EarlyStopping(args.checkpoint_path, patience=100, verbose=True)
         for epoch in range(args.epochs):
             trainer.train(epoch)
             # evaluate on MRR

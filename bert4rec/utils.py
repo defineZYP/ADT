@@ -29,28 +29,23 @@ def get_name_of_experiment_path(experiment_dir, experiment_description):
     experiment_path = experiment_path + "_" + str(idx)
     return experiment_path
 
-
 def _get_experiment_index(experiment_path):
     idx = 0
     while os.path.exists(experiment_path + "_" + str(idx)):
         idx += 1
     return idx
 
-
 def load_weights(model, path):
     pass
-
 
 def save_test_result(export_root, result):
     filepath = Path(export_root).joinpath('test_result.txt')
     with filepath.open('w') as f:
         json.dump(result, f, indent=2)
 
-
 def export_experiments_config_as_json(args, experiment_path):
     with open(os.path.join(experiment_path, 'config.json'), 'w') as outfile:
         json.dump(vars(args), outfile, indent=2)
-
 
 def fix_random_seed_as(random_seed):
     random.seed(random_seed)
@@ -77,7 +72,6 @@ def create_optimizer(model, args):
         return optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     return optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
-
 
 class AverageMeterSet(object):
     def __init__(self, meters=None):

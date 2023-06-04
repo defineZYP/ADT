@@ -1,6 +1,6 @@
 '''
 It is the official implementation of multihead attention layer in PyTorch
-Just add an output
+Just add an output of different heads for the independence constraints
 '''
 import numpy as np
 import math

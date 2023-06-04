@@ -25,30 +25,26 @@ def str2bool(s):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', required=True)
-    parser.add_argument('--train_dir', required=True)
+    parser.add_argument('--train_dir', help='output dir', required=True)
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--lr', default=0.001, type=float)
-    parser.add_argument('--maxlen', default=50, type=int)
+    parser.add_argument('--maxlen', help='max length of sequence', default=50, type=int)
     parser.add_argument('--hidden_units', default=50, type=int)
     parser.add_argument('--num_layers', default=4, type=int)
     parser.add_argument('--num_epochs', default=200, type=int)
     parser.add_argument('--num_heads', default=1, type=int)
     parser.add_argument('--dropout', default=0.5, type=float)
     parser.add_argument('--clip', default=5.0, type=float)
-    parser.add_argument('--warmup_steps_rate', default=0.1, type=float)
-    parser.add_argument('--sample_size', default=100, type=int)
+    parser.add_argument('--sample_size', help='sample size of negative candidates', default=100, type=int)
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--inference_only', default=False, type=str2bool)
     parser.add_argument('--state_dict_path', default=None, type=str)
     parser.add_argument('--is_save', default=False, type=str2bool)
     parser.add_argument('--weight_decay', default=0, type=float)
-    parser.add_argument('--eval_interval', default=20, type=int)
+    parser.add_argument('--eval_interval', help='interval to evaluate the model when training', default=20, type=int)
     parser.add_argument('--eval_batch_size', default=512, type=int)
-    parser.add_argument('--eval_set', default=-1, type=int)
-    parser.add_argument('--ind_loss', default='dcov', type=str)
-    parser.add_argument('--vis', default=False, type=str2bool)
-    parser.add_argument('--topk', default=-1, type=int)
-    # parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--eval_set', help='number of the test set, negative value means all users should be evaluated', default=-1, type=int)
+    parser.add_argument('--topk', help='use which lambda set', default=-1, type=int)
 
     args = parser.parse_args()
     args = set_template(args)
@@ -115,12 +111,7 @@ def main(args_str=None):
             tail = args.state_dict_path[args.state_dict_path.find('epoch=') + 6:]
             epoch_start_idx = int(tail[:tail.find('.')]) + 1
         except: # in case your pytorch version is not 1.6 etc., pls debug by pdb if load weights failed
-            # print('failed loading state_dicts, pls check file path: ', end="")
-            # print(args.state_dict_path)
-            # print('pdb enabled for your quick check, pls type exit() if you do not need it')
             import pdb; pdb.set_trace()
-
-    # model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
     
     model.train() # enable model training
     
@@ -160,15 +151,15 @@ def main(args_str=None):
                 indices = np.where(pos != 0)
                 loss = bce_criterion(pos_logits[indices], pos_labels[indices])
                 loss += bce_criterion(neg_logits[indices], neg_labels[indices])
-                # recon
+                # reconstruction constraints
                 if len(encoder_layer_input) != 0 and len(encoder_layer_input) == len(decoder_layer_output):
                     # MSE loss calculate the reconstruction loss
                     for i in range(len(encoder_layer_input)):
                         loss += lambdas1[i] * F.mse_loss(encoder_layer_input[i], decoder_layer_output[i])
                 
                 if args.num_heads > 1:
-                    # ind loss
-                    # generate label
+                    # independence constraints
+                    # generate pseudo label
                     batch_size = rec_layer_ind[0].shape[0]
                     label = torch.arange(args.num_heads)
                     label = torch.tile(label, [batch_size * args.maxlen, 1]).to(args.device)
@@ -183,7 +174,7 @@ def main(args_str=None):
                 t.set_postfix(loss=loss.item())
                 losses.append(loss.item())
                 lrs.append(adam_optimizer.param_groups[0]['lr'])
-
+        # evaluate model each eval_interval
         if (((epoch+1) % args.eval_interval == 0) or (epoch + 1 == args.num_epochs)):
             print(f"{epoch}/{args.num_epochs}")
             model.eval()

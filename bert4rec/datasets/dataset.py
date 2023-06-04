@@ -72,9 +72,7 @@ class BertTrainDataset(Dataset):
         generate data
         '''
         for user in tqdm.trange(self.usernum):
-            '''
-            generate dataset
-            '''
+            # for each user, mask part of the sequence to get the training data
             seqs = self.user_train[user + 1]
             if len(seqs) < 1:
                 continue
@@ -101,6 +99,10 @@ class BertTrainDataset(Dataset):
             self.labels.append(label)
 
     def _mask_last(self, seq):
+        '''
+        according to bert4rec paper, there is a inconsistency between training and evaluation
+        so we need to make training data which only mask the last item of the sequence .............. 
+        '''
         tokens = []
         dec_tokens = []
         labels = []
@@ -122,7 +124,7 @@ class BertTrainDataset(Dataset):
 
     def sample_data(self, seq):
         # popularity sample test set
-        # seq = self.user_train[user]
+        # from bert4rec
         tokens = []
         dec_tokens = []
         labels = []
@@ -145,9 +147,6 @@ class BertTrainDataset(Dataset):
                 tokens.append(s)
                 dec_tokens.append(s)
                 labels.append(0)
-        # item_idx = [self.user_test[user][0]]
-        # item_idx += self.negative_sampler.get_negative_samples(user, mode=self.mode)
-        # item_idx = np.array(item_idx)
         tokens = tokens[-self.maxlen:]
         labels = labels[-self.maxlen:]
         dec_tokens[-1] = self.mask_token
@@ -159,11 +158,6 @@ class BertTrainDataset(Dataset):
         return (torch.LongTensor(tokens), torch.LongTensor(dec_tokens)), torch.LongTensor(labels)
 
     def __getitem__(self, i):
-        # user = i % self.usernum + 1
-        # while len(self.user_train[user]) < 1:
-        #     user = (user + 1) % self.usernum + 1
-        # seq, labels, deq = self.sample_data(user)
-        # return (seq, deq), labels
         seq, deq = self.datas[i]
         label = self.labels[i]
         return (seq, deq), label
@@ -222,13 +216,6 @@ class BertEvalDataset(Dataset):
         return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels)
         
     def __getitem__(self, i):
-        # user = i % self.usernum + 1
-        # if self.mode == 'test':
-        #     while len(self.user_train[user]) < 1 or len(self.user_test[user]) < 1:
-        #         user = (user + 1) % self.usernum + 1
-        # elif self.mode == 'val':
-        #     while len(self.user_train[user]) < 1 or len(self.user_val[user]) < 1:
-        #         user = (user + 1) % self.usernum + 1
         user = self.users[i]
         seq, candidates, labels = self.sample_data(user)
         return (user, seq, candidates), labels
@@ -253,18 +240,12 @@ class BertTuneDataset(Dataset):
         self.labels = []
         if generate:
             self._generate_data()
-            # self.dupe_factor = dupe_factor
-            # self.datas = np.array(self.datas)
-            # self.labels = np.array(self.labels)
 
     def _generate_data(self):
         '''
         generate data
         '''
         for user in tqdm.trange(self.usernum):
-            '''
-            generate dataset
-            '''
             seqs = self.user_train[user + 1]
             if len(seqs) < 1:
                 continue
@@ -318,9 +299,6 @@ class BertTuneDataset(Dataset):
                 tokens.append(s)
                 dec_tokens.append(s)
                 labels.append(0)
-        # item_idx = [self.user_test[user][0]]
-        # item_idx += self.negative_sampler.get_negative_samples(user, mode=self.mode)
-        # item_idx = np.array(item_idx)
         tokens = tokens[-self.maxlen:]
         labels = labels[-self.maxlen:]
         dec_tokens[-1] = self.mask_token
@@ -332,11 +310,6 @@ class BertTuneDataset(Dataset):
         return (torch.LongTensor(tokens), torch.LongTensor(dec_tokens)), torch.LongTensor(labels)
 
     def __getitem__(self, i):
-        # user = i % self.usernum + 1
-        # while len(self.user_train[user]) < 1:
-        #     user = (user + 1) % self.usernum + 1
-        # seq, labels, deq = self.sample_data(user)
-        # return (seq, deq), labels
         seq, deq = self.datas[i]
         label = self.labels[i]
         return (seq, deq), label
@@ -400,13 +373,6 @@ class BertDoubleEvalDataset(Dataset):
         return torch.LongTensor(seq), torch.LongTensor(deq), torch.LongTensor(candidates), torch.LongTensor(labels)
         
     def __getitem__(self, i):
-        # user = i % self.usernum + 1
-        # if self.mode == 'test':
-        #     while len(self.user_train[user]) < 1 or len(self.user_test[user]) < 1:
-        #         user = (user + 1) % self.usernum + 1
-        # elif self.mode == 'val':
-        #     while len(self.user_train[user]) < 1 or len(self.user_val[user]) < 1:
-        #         user = (user + 1) % self.usernum + 1
         user = self.users[i]
         seq, deq, candidates, labels = self.sample_data(user)
         return (user, seq, deq, candidates), labels

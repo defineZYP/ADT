@@ -2,6 +2,9 @@ import numpy as np
 from collections import defaultdict, Counter
 
 class PopularSampler:
+    '''
+    sampling data according to the popularity
+    '''
     def __init__(self, train, val, test, usernum, itemnum, sample_size):
         self.train = train
         self.val = val
@@ -13,6 +16,9 @@ class PopularSampler:
         self.negative_samples = self._generate_negative_samples()
 
     def _generate_popular_items(self):
+        '''
+        calculate the number of the appearance of the item and treat it as a weight of possiblity
+        '''
         popularity = Counter()
         for user in range(1, self.usernum + 1):
             popularity.update(self.train[user])
@@ -28,6 +34,9 @@ class PopularSampler:
         return None
 
     def _no_negative_samples(self, user, mode='valid'):
+        '''
+        no sampling, treat all items as candidates
+        '''
         item_idx = []
         if mode == 'val':
             seen = self.val[user]
@@ -54,6 +63,9 @@ class PopularSampler:
         return item_idx[:self.sample_size]
 
 class RandomSampler:
+    '''
+    random sample data
+    '''
     def __init__(self, train, val, test, usernum, itemnum, sample_size):
         self.train = train
         self.val = val

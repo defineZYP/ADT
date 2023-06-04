@@ -7,13 +7,7 @@ from trainer import BertTrainer
 from utils import *
 
 def main():
-    # 设置存档点
     export_root = setup_train(args)
-    # 得到数据集
-    # train_loader, val_loader, test_loader = get_loader(args)
-    # 得到模型
-    # model = Bert(args)
-    # 训练模型
     trainer = BertTrainer(args)
     lambda1, lambda2 = get_lambda(args.dataset, args.topk)
     best_epoch, rec_valid, rec_valid_AUC, rec_test, rec_test_AUC = trainer.train(lambda1, lambda2)
