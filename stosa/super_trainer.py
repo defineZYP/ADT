@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tqdm
 import random
@@ -10,7 +11,7 @@ from torch.optim import Adam
 
 from utils import recall_at_k, ndcg_k, get_metric, cal_mrr
 from modules import wasserstein_distance, kl_distance, wasserstein_distance_matmul, d2s_gaussiannormal, d2s_1overx, kl_distance_matmul
-from trainers import Trainer
+from trainer import Trainer
 import time
 
 class SuperDistSAModelTrainer(Trainer):
@@ -296,4 +297,5 @@ class SuperDistSAModelTrainer(Trainer):
         return self.iteration(epoch, self.test_dataloader, None, None, full_sort, train=False)
 
     def save_checkpoint(self, filename):
+        os.makedirs('./checkpoint', exist_ok=True)
         torch.save(self.model.state_dict(), './checkpoint/super.pth')

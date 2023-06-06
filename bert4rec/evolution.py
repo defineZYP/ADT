@@ -24,7 +24,6 @@ from datasets.dataset import BertEvalDataset, BertTrainDataset
 from datasets.negative_sampler import RandomSampler, PopularSampler
 
 from options import args
-# from hsic import RbfHSIC
 
 choice = lambda x: x[np.random.randint(len(x))] if isinstance(
     x, list) else choice(list(x))
@@ -52,7 +51,7 @@ class SearcherEvolution():
         [user_train, user_valid, user_test, usernum, itemnum] = self.dataset
         train_sampler = RandomSampler(user_train, user_valid, user_test, usernum, itemnum, args.train_negative_sample_size)
         eval_sampler = PopularSampler(user_train, user_valid, user_test, usernum, itemnum, args.eval_negative_sample_size)
-        warp_dataset = BertTrainDataset(user_train, user_valid, user_test, usernum, itemnum, args.maxlen, train_sampler, args.mask_prob, args.dataset_random_seed)
+        warp_dataset = BertTrainDataset(user_train, user_valid, user_test, usernum, itemnum, args.maxlen, train_sampler, args.mask_prob, args.dataset_random_seed, dupe_factor=args.dupe_factor, prop_sliding_window=args.prop_sliding_window)
         # dist_train_sampler = torch.utils.data.distributed.DistributedSampler(warp_dataset)
         # self.train_loader = DataLoader(warp_dataset, batch_size=args.batch_size, num_workers=4, sampler=dist_train_sampler)
         self.train_loader = DataLoader(warp_dataset, batch_size=args.batch_size, num_workers=4, shuffle=True)
@@ -341,7 +340,10 @@ class SearcherEvolution():
             t = self.keep_top_k[self.select_num]
             for cand in t:
                 info = self.vis_dict[str(cand)]
+                self._set_choice(cand)
                 info['cand'] = str(cand)
+                info['rec'] = str(self.rec_weights)
+                info['ind'] = str(self.ind_weights)
                 writer.write(info)
 
 def set_rng_seed(seed):

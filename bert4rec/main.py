@@ -7,6 +7,9 @@ from trainer import BertTrainer
 from utils import *
 
 def main():
+    if args.template:
+        args = set_template(args)
+    print(args)
     export_root = setup_train(args)
     trainer = BertTrainer(args)
     lambda1, lambda2 = get_lambda(args.dataset, args.topk)

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 import jsonlines
@@ -266,7 +267,8 @@ class SearcherEvolution():
                 self.get_random(self.population_num)
         # self.show_top_k(self.select_num)
         # save top_k
-        with jsonlines.open(f'./res/res_{self.args.data_name}_lr_{self.args.lr}_reg_{self.args.weight_decay}_warm_{self.args.warmup_epochs}_search_{self.args.search_epochs}_layers_{self.args.num_layers}_select_{self.args.select_num}_population_{self.args.population_num}_cross_{self.args.crossover_num}_mutation_{self.args.mutation_num}.jsonl', mode='w') as writer:
+        os.makedirs('./res', exist_ok=True)
+        with jsonlines.open(f'./res/res_{self.args.dataset}_lr_{self.args.lr}_reg_{self.args.weight_decay}_warm_{self.args.warmup_epochs}_search_{self.args.search_epochs}_layers_{self.args.num_layers}_select_{self.args.select_num}_population_{self.args.population_num}_cross_{self.args.crossover_num}_mutation_{self.args.mutation_num}.jsonl', mode='w') as writer:
             t = self.keep_top_k[self.select_num]
             for cand in t:
                 info = self.vis_dict[str(cand)]

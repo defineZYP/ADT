@@ -36,7 +36,7 @@ python evolution.py --dataset xxx
 
 ### Retrain
 
-After searching process, you will get the best candidate in `/res` and you can copy the candidate vector and your search space to `candidates_to_lambdas.py` and run it to get the best lambdas. And then copy the lambdas to function `get_lambdas` in `utils.py` and retrain the model to get the final score. 
+After searching process, you will get the best candidate in `/res` and you can copy the candidate vector and your search space to `candidates_to_lambdas.py` and run it to get the best lambdas, or copy the value of key `rec` and `ind` to get the best lambdas. And then copy the lambdas to function `get_lambdas` in `utils.py` and retrain the model to get the final score. 
 
 For convenience, we have recorded part of the lambdas used in our experiments in `utils.py` and hyperparameters in `/templates` as an example.
 

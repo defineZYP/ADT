@@ -1,10 +1,10 @@
 {
     "lr": 0.001,
     "weight_decay": 0,
-    "hidden_units": 128,
+    "hidden_units": 64,
     "num_heads": 4,
     "num_layers": 1,
-    "attention_dropout": 0.5,
+    "attention_dropout": 0.3,
     "dropout": 0.3,
     "maxlen": 100,
     "epochs": 500,

@@ -63,7 +63,7 @@ def parse_args():
     return args
 
 class SearcherEvolution():
-    def __init__(self.args):
+    def __init__(self, args):
         self.args = args
         # information that evolutional algorithm needs
         self.select_num = args.select_num
@@ -73,15 +73,13 @@ class SearcherEvolution():
         self.m_prob = args.m_prob
         self.crossover_num = args.crossover_num
         self.mutation_num = args.mutation_num
-        self.num_blocks = args.num_blocks
+        self.num_layers = args.num_layers
         # generate dataset
         self.dataset = data_partition(args.dataset)
 
-        [user_train, user_valid, user_test, usernum, itemnum] = dataset
+        [user_train, user_valid, user_test, usernum, itemnum] = self.dataset
         negative_sampler = PopularSampler(user_train, user_valid, user_test, usernum, itemnum, args.sample_size)
         num_batch = len(user_train) // args.batch_size # tail? + ((len(user_train) % args.batch_size) != 0)
-        
-        f = open(os.path.join(args.dataset + '_' + args.train_dir, 'log.txt'), 'w')
         
         # sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=3)
         warp_dataset = WarpDataset(user_train, usernum, itemnum, args.maxlen)
@@ -140,9 +138,9 @@ class SearcherEvolution():
 
     def _set_choice(self, cand):
         # change cand to weight
-        num_blocks = int(len(cand) / 2)
+        num_layers = int(len(cand) / 2)
         block_cand = []
-        for i in range(0, 2 * num_blocks, 2):
+        for i in range(0, 2 * num_layers, 2):
             rec = cand[i]
             ind = cand[i + 1]
             rec_weight = self._get_weight(self.rec_choice, rec)
@@ -152,11 +150,11 @@ class SearcherEvolution():
             block_cand.append(rec_weight)
             block_cand.append(ind_weight)
         # set block
-        self.model.module.set_choice(np.array(block_cand))
+        self.model.set_choice(np.array(block_cand))
 
     def sample_random(self):
         res = list()
-        for _ in range(self.args.num_blocks):
+        for _ in range(self.args.num_layers):
             res.append(random.random())
             res.append(random.random())
         return res
@@ -174,14 +172,14 @@ class SearcherEvolution():
     def get_cand_auc(self, cand):
         self._set_choice(cand)
         self.model.eval()
-        t_valid, AUC = evaluate_loader(self.model.module, self.val_loader, self.args, 'val', ks=[10])
+        t_valid, AUC = evaluate_loader(self.model, self.val_loader, self.args, 'val', ks=[10])
         self.vis_dict[str(cand)]['V_NDCG'] = float(t_valid[0][10])
         self.vis_dict[str(cand)]['V_HR'] = float(t_valid[1][10])
         self.vis_dict[str(cand)]['V_AUC'] = float(AUC)
         return float(AUC)
 
     def check_cand(self, cand):
-        # assert isinstance(cand, list) and len(cand) == (self.num_blocks * 2)
+        # assert isinstance(cand, list) and len(cand) == (self.num_layers * 2)
         if str(cand) not in self.vis_dict:
             self.vis_dict[str(cand)] = {}
         info = self.vis_dict[str(cand)]
@@ -223,7 +221,7 @@ class SearcherEvolution():
             if 'test_auc' not in info:
                 self._set_choice(cand)
                 self.model.eval()
-                t_test, AUC = evaluate_loader(self.model.module, self.test_loader, self.args, mode='test', ks=[10])
+                t_test, AUC = evaluate_loader(self.model, self.test_loader, self.args, mode='test', ks=[10])
                 info['T_NDCG'] = float(t_test[0][10])
                 info['T_HR'] = float(t_test[1][10])
                 info['T_AUC'] = float(AUC)
@@ -260,7 +258,7 @@ class SearcherEvolution():
         def random_func():
             # get top k candidates
             cand = list(choice(self.keep_top_k[k]))
-            for i in range(self.num_blocks * 2):
+            for i in range(self.num_layers * 2):
                 if np.random.random_sample() < m_prob:
                     cand2 = list(choice(self.keep_top_k[k]))
                     cand3 = list(choice(self.keep_top_k[k]))
@@ -286,14 +284,14 @@ class SearcherEvolution():
             self._set_choice(cand)
             with tqdm.tqdm(self.dataloader) as t:
                 for batch, _ in t:
-                    t.set_description(f"Warmup: epoch {epoch + 1} / {args.num_epochs} ")
+                    t.set_description(f"Warmup: epoch {epoch + 1} / {self.args.warmup_epochs} ")
                     u, seq, dec, pos, neg = batch # tuples to ndarray
                     u, seq, dec, pos, neg = np.array(u), np.array(seq), np.array(dec), np.array(pos), np.array(neg)
-                    pos_logits, neg_logits, encoder_layer_input, decoder_layer_output, rec_layer_ind = model(u, seq, dec, pos, neg)
-                    pos_labels, neg_labels = torch.ones(pos_logits.shape, device=args.device), torch.zeros(neg_logits.shape, device=args.device)
+                    pos_logits, neg_logits, encoder_layer_input, decoder_layer_output, rec_layer_ind = self.model(u, seq, dec, pos, neg)
+                    pos_labels, neg_labels = torch.ones(pos_logits.shape, device=self.args.device), torch.zeros(neg_logits.shape, device=self.args.device)
                     # print("\neye ball check raw_logits:"); print(pos_logits); print(neg_logits) # check pos_logits > 0, neg_logits < 0
                     # print(pos_logits, neg_logits)
-                    adam_optimizer.zero_grad()
+                    self.optimizer.zero_grad()
                     indices = np.where(pos != 0)
                     loss = self.loss(pos_logits[indices], pos_labels[indices])
                     loss += self.loss(neg_logits[indices], neg_labels[indices])
@@ -303,18 +301,18 @@ class SearcherEvolution():
                         for i in range(len(encoder_layer_input)):
                             loss += self.rec_weights[i] * F.mse_loss(encoder_layer_input[i], decoder_layer_output[i])
                     
-                    if args.num_heads > 1:
+                    if self.args.num_heads > 1:
                         # ind loss
                         # generate label
                         batch_size = rec_layer_ind[0].shape[0]
-                        label = torch.arange(args.num_heads)
-                        label = torch.tile(label, [batch_size * args.maxlen, 1]).to(args.device)
+                        label = torch.arange(self.args.num_heads)
+                        label = torch.tile(label, [batch_size * self.args.maxlen, 1]).to(self.args.device)
                         # calculate loss
                         for l in range(len(rec_layer_ind)):
                             # rec_layer_ind[i] shape: [batch_size, maxlen, num_head, num_head]
-                            loss += self.ind_weights[i] * F.nll_loss(rec_layer_ind[l].view(batch_size * args.maxlen, args.num_heads, args.num_heads), label)
+                            loss += self.ind_weights[i] * F.nll_loss(rec_layer_ind[l].view(batch_size * self.args.maxlen, self.args.num_heads, self.args.num_heads), label)
                     loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
                     self.optimizer.step()
 
                     t.set_postfix(loss=loss.item())
@@ -354,11 +352,14 @@ class SearcherEvolution():
                 self.get_random(self.population_num)
         # save top_k
         os.makedirs('./res', exist_ok=True)
-        with jsonlines.open(f'./res/res_{self.args.dataset}_lr_{self.args.lr}_reg_{self.args.weight_decay}_warm_{self.args.warmup_epochs}_search_{self.args.search_epochs}_layers_{self.args.num_blocks}_select_{self.args.select_num}_population_{self.args.population_num}_cross_{self.args.crossover_num}_mutation_{self.args.mutation_num}.jsonl', mode='w') as writer:
+        with jsonlines.open(f'./res/res_{self.args.dataset}_lr_{self.args.lr}_reg_{self.args.weight_decay}_warm_{self.args.warmup_epochs}_search_{self.args.search_epochs}_layers_{self.args.num_layers}_select_{self.args.select_num}_population_{self.args.population_num}_cross_{self.args.crossover_num}_mutation_{self.args.mutation_num}.jsonl', mode='w') as writer:
             t = self.keep_top_k[self.select_num]
             for cand in t:
                 info = self.vis_dict[str(cand)]
+                self._set_choice(cand)
                 info['cand'] = str(cand)
+                info['rec'] = str(self.rec_weights)
+                info['ind'] = str(self.ind_weights)
                 writer.write(info)
 
 def set_rng_seed(seed):
@@ -370,6 +371,7 @@ def set_rng_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 def main():
+    args = parse_args()
     set_rng_seed(args.seed)
     Searcher = SearcherEvolution(args)
     Searcher.search()

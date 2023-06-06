@@ -184,7 +184,8 @@ class BertTrainer:
             mask_prob=args.mask_prob,
             seed=args.dataset_random_seed,
             generate=generate,
-            dupe_factor=args.dupe_factor
+            dupe_factor=args.dupe_factor,
+            prop_sliding_window=args.prop_sliding_window
         )
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=4, shuffle=True)
         popular_sampler = PopularSampler(

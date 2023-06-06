@@ -39,8 +39,8 @@ parser.add_argument('--prop_sliding_window', help='the masked part of the user-i
 parser.add_argument('--type_vocab_size', help='number of vocab size', type=int, default=2)
 parser.add_argument('--initializer_range', help='initializer range', type=float, default=0.02)
 parser.add_argument('--maxlen', help='max length of user-item sequence', type=int, default=200)
-parser.add_argument('--hidden_units', help='hidden units of transformer input and output', type=int, default=256)
-parser.add_argument('--inner_units', help='hidden units in feed forward networks', type=int, default=1024)
+parser.add_argument('--hidden_units', help='hidden units of transformer input and output', type=int, default=64)
+parser.add_argument('--inner_units', help='hidden units in feed forward networks', type=int, default=128)
 parser.add_argument('--num_layers', help='number of layers', type=int, default=2)
 parser.add_argument('--num_heads', help='number of attention heads', type=int, default=2)
 parser.add_argument('--dropout', help='dropout rate in fwd networks', type=float, default=0.2)
@@ -65,7 +65,3 @@ parser.add_argument('--scale_factor', help='scale factor', type=float, default=0
 parser.add_argument('--scale_decay_rate', help='scale decay rate', type=float, default=0.5)
 
 args = parser.parse_args()
-if args.template:
-    args = set_template(args)
-
-print(args)

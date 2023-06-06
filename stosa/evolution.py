@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument('--num_heads', default=4, type=int)
     parser.add_argument('--hidden_act', default="gelu", type=str) # gelu relu
     parser.add_argument("--attention_dropout", type=float, default=0.5, help="attention dropout p")
-    parser.add_argument("--hidden_dropout_prob", type=float, default=0.5, help="hidden dropout p")
+    parser.add_argument("--dropout", type=float, default=0.5, help="hidden dropout p")
     parser.add_argument("--initializer_range", type=float, default=0.02)
     parser.add_argument('--distance_metric', default='wasserstein', type=str)
     parser.add_argument('--kernel_param', default=1.0, type=float)
