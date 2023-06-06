@@ -373,22 +373,22 @@ def ndcg_at_k(r, k, method=1):
         return 0.
     return dcg_at_k(r, k, method) / dcg_max
 
-def get_lambdas(data_name, tp=-1):
-    if data_name == "Office":
+def get_lambdas(dataset, tp=-1):
+    if dataset == "Office":
         return [1e-05, 0, 0.0008], [0.0022, 0.0056, 0.0006]
-    elif data_name == "Tools":
+    elif dataset == "Tools":
         return [0, 0.0002, 0.0052], [0.0005, 0.0009, 0.0051]
-    elif data_name == "Toys":
+    elif dataset == "Toys":
         return [0.0096, 0, 0.0007], [0.0013, 0, 0.0001]
-    elif data_name == "Beauty":
+    elif dataset == "Beauty":
         return [0.0021, 0.0068, 0.0005], [0.0009, 0.0066, 0.0094]
-    elif data_name == "Home":
+    elif dataset == "Home":
         return [0.00010069411089658844, 0.009999999997500002, 3.731464248236788e-05], [0.00015787356250004648, 0.000851136830980773, 7.281280851300642e-07]
     else:
         raise NotImplementedError("Not supported yes")
 
 def set_template(args, template_folder='./templates'):
-    filename = f"{template_folder}/{args.data_name}.json"
+    filename = f"{template_folder}/{args.dataset}.json"
     with open(filename, 'r') as f:
         arg_dic = json.load(f)
     for k in arg_dic:
