@@ -12,6 +12,6 @@
     "dropout": 0.5,
     "weight_decay": 0.0001,
     "attention_dropout": 0.5,
-    "prop_sliding_window": 0.1,
+    "prop_sliding_window": 0.5,
     "dupe_factor": 10
 }
